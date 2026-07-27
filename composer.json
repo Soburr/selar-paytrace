@@ -15,8 +15,15 @@
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
-        "laravel/wayfinder": "^0.1.14"
+        "laravel/wayfinder": "^0.1.14",
+        "soburr/payment-tracker": "@dev"
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/Soburr/payment-tracker"
+        }
+    ],
     "require-dev": {
         "fakerphp/faker": "^1.24",
         "larastan/larastan": "^3.9",

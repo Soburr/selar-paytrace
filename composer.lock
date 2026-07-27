@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d402d327dda606ec48e9bc422d20f9b0",
+    "content-hash": "23bbf91d10a0898ff5698d69590f527b",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -4121,6 +4121,45 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.9.3"
             },
             "time": "2026-06-18T03:57:49+00:00"
+        },
+        {
+            "name": "soburr/payment-tracker",
+            "version": "dev-master",
+            "dist": {
+                "type": "path",
+                "url": "packages/Soburr/payment-tracker",
+                "reference": "63aa262b02d4b2b4507d07207b2f31e7a460cd3a"
+            },
+            "require": {
+                "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+                "php": "^8.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Soburr\\PaymentTracker\\PaymentTrackerServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Soburr\\PaymentTracker\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Adebesin",
+                    "email": "adebesinbenzenejr99@gmail.com"
+                }
+            ],
+            "description": "Self-service payment status tracking for Paystack-powered marketplaces",
+            "transport-options": {
+                "relative": true
+            }
         },
         {
             "name": "spomky-labs/cbor-php",
@@ -11067,7 +11106,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "soburr/payment-tracker": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
