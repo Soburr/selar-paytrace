@@ -4,6 +4,7 @@ namespace Soburr\PaymentTracker\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Soburr\PaymentTracker\Models\PaymentTrack;
 use Soburr\PaymentTracker\Services\PaystackSignatureVerifier;
 
 class PaystackWebhookController extends Controller
@@ -38,11 +39,78 @@ class PaystackWebhookController extends Controller
         // from Paystack. Only now is it safe to look at what's inside.
         $payload = json_decode($rawBody, true);
 
-        // For now, just prove the whole pipeline works end to end.
-        // In Step 4, this is where we actually create the database row.
+        $event = $payload['event'] ?? null;
+
+        // We only care about successful charges for now. Paystack sends
+        // MANY different event types (transfer.success, refund.processed,
+        // etc.) to the same URL. We must not assume every webhook is a
+        // charge - always check what event this actually is.
+        if ($event !== 'charge.success') {
+            // Still respond 200 OK, even though we're not acting on it.
+            // Paystack considers anything other than a 2xx response a
+            // FAILED delivery and will retry aggressively. Since we
+            // genuinely received and understood this event (we just
+            // chose not to act on it), a 200 is the honest response.
+            return response()->json(['message' => 'Event ignored', 'event' => $event]);
+        }
+
+        $data = $payload['data'] ?? [];
+        $reference = $data['reference'] ?? null;
+        $amountKobo = $data['amount'] ?? null;
+        $currency = $data['currency'] ?? 'NGN';
+
+        // Defensive check: a genuine Paystack charge.success event will
+        // always include a reference and amount, but we never trust
+        // that blindly - if either is missing, something is malformed,
+        // and we reject rather than insert incomplete/broken data.
+        if (! $reference || ! $amountKobo) {
+            return response()->json(['message' => 'Malformed payload'], 422);
+        }
+
+        // IDEMPOTENCY CHECK - Paystack can and will send the same
+        // event more than once (network retries, redundancy systems).
+        // Before inserting, check whether we've already recorded this
+        // exact reference. If so, this is a repeat delivery of
+        // something we already know about - not a new payment, and
+        // not an error. We respond successfully without touching the
+        // database again.
+        $existing = PaymentTrack::where('paystack_reference', $reference)->first();
+
+        if ($existing) {
+            return response()->json([
+                'message' => 'Already recorded (duplicate delivery)',
+                'tracking_token' => $existing->tracking_token,
+            ]);
+        }
+
+        // Belt-and-suspenders: even with the check above, it's
+        // theoretically possible for two near-simultaneous duplicate
+        // webhook deliveries to both pass the "does it exist?" check
+        // before either has finished inserting (a race condition).
+        // The database's own unique constraint (from Milestone 1) is
+        // our real, unbreakable safety net - we catch its rejection
+        // here and turn it into the same graceful response, instead
+        // of letting it crash as a raw 500 error.
+        try {
+            $track = PaymentTrack::create([
+                'tracking_token' => PaymentTrack::generateTrackingToken(),
+                'paystack_reference' => $reference,
+                'status' => 'payment_received',
+                'amount_kobo' => $amountKobo,
+                'currency' => $currency,
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            $existing = PaymentTrack::where('paystack_reference', $reference)->first();
+
+            return response()->json([
+                'message' => 'Already recorded (duplicate delivery)',
+                'tracking_token' => $existing?->tracking_token,
+            ]);
+        }
+
         return response()->json([
-            'message' => 'Signature verified successfully',
-            'event' => $payload['event'] ?? 'unknown',
+            'message' => 'Payment tracked successfully',
+            'tracking_token' => $track->tracking_token,
         ]);
     }
 }
