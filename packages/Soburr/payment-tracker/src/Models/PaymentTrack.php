@@ -3,6 +3,8 @@
 namespace Soburr\PaymentTracker\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Soburr\PaymentTracker\Exceptions\InvalidStatusTransitionException;
+use Soburr\PaymentTracker\Services\PaymentStatusMachine;
 
 class PaymentTrack extends Model
 {
@@ -32,6 +34,7 @@ class PaymentTrack extends Model
      */
     protected $casts = [
         'verified_at' => 'datetime',
+        'product_access_confirmed_at' => 'datetime',
         'payout_scheduled_at' => 'datetime',
         'payout_sent_at' => 'datetime',
     ];
@@ -52,5 +55,37 @@ class PaymentTrack extends Model
         // public token that guards access to payment info), we must
         // use a cryptographically secure source.
         return bin2hex(random_bytes($bytes));
+    }
+
+    /**
+     * The ONLY sanctioned way to change this payment's status.
+     * Anything trying to change status by any other means (directly
+     * setting $track->status = ... and saving) is bypassing our
+     * safety rules and should never be done elsewhere in the codebase.
+     *
+     * @throws InvalidStatusTransitionException if the move isn't legal
+     */
+    public function transitionTo(string $newStatus): self
+    {
+        if (! PaymentStatusMachine::canTransition($this->status, $newStatus)) {
+            throw InvalidStatusTransitionException::make($this->status, $newStatus);
+        }
+
+        $this->status = $newStatus;
+
+        // Automatically stamp the matching timestamp column, so we
+        // always know exactly WHEN each stage happened - not just
+        // that it happened. This keeps the "when" and the "what"
+        // impossible to get out of sync with each other, since
+        // they're set together, in the same method, every time.
+        match ($newStatus) {
+            'verified' => $this->verified_at = now(),
+            'product_access_confirmed' => $this->product_access_confirmed_at = now(),
+            default => null,
+        };
+
+        $this->save();
+
+        return $this;
     }
 }
