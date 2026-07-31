@@ -6,11 +6,13 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Soburr\PaymentTracker\Models\PaymentTrack;
 use Soburr\PaymentTracker\Services\PaystackSignatureVerifier;
+use Soburr\PaymentTracker\Services\PaystackVerificationService;
 
 class PaystackWebhookController extends Controller
 {
     public function __construct(
-        protected PaystackSignatureVerifier $verifier
+        protected PaystackSignatureVerifier $verifier,
+        protected PaystackVerificationService $verificationService
     ) {}
 
     public function handle(Request $request)
@@ -108,9 +110,29 @@ class PaystackWebhookController extends Controller
             ]);
         }
 
+        // Now that the record exists, independently confirm it with
+        // Paystack's own Verify API before advancing its status.
+        $this->verifyAndAdvance($track);
+
         return response()->json([
             'message' => 'Payment tracked successfully',
             'tracking_token' => $track->tracking_token,
         ]);
+    }
+
+    /**
+     * Independently confirms the transaction with Paystack's own API
+     * (not just trusting the webhook payload alone) and, only if
+     * genuinely confirmed, moves the status forward to 'verified'.
+     */
+    protected function verifyAndAdvance(PaymentTrack $track): void
+    {
+        if ($this->verificationService->isSuccessful($track->paystack_reference)) {
+            $track->transitionTo('verified');
+        }
+        // If verification fails or can't be confirmed, we deliberately
+        // do nothing here - the record simply stays at
+        // 'payment_received' until it can be genuinely confirmed,
+        // rather than us guessing.
     }
 }

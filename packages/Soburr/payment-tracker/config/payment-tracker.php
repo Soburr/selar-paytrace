@@ -36,4 +36,17 @@ return [
     */
     'lookup_rate_limit_per_minute' => 20,
 
+    /*
+    |--------------------------------------------------------------------
+    | Internal API Secret
+    |--------------------------------------------------------------------
+    | A SEPARATE secret from the Paystack key, used to authenticate
+    | calls to our internal "confirm product access" endpoint. This
+    | is NOT the Paystack secret - reusing that key here would mean
+    | anything that could forge a Paystack signature (which it can't,
+    | but hypothetically) could also fake product access confirmation.
+    | Keeping these separate limits the blast radius of any one leak.
+    */
+    'internal_api_secret' => env('PAYMENT_TRACKER_INTERNAL_SECRET'),
+
 ];

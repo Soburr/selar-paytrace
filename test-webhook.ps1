@@ -1,4 +1,4 @@
-$body = '{"event":"charge.success","data":{"reference":"test_ref_001","amount":500000,"currency":"NGN"}}'
+$body = '{"event":"charge.success","data":{"reference":"test_ref_002","amount":500000,"currency":"NGN"}}'
 $secretKey = "sk_test_2bf84c1dc166da793716e211264661d27c8ab28d"  
 
 # Write the body to an actual file, untouched
