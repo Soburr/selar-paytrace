@@ -1,5 +1,6 @@
 <?php
 
+use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 use Soburr\PaymentTracker\Http\Controllers\PaystackWebhookController;
 use Soburr\PaymentTracker\Http\Controllers\ConfirmProductAccessController;
@@ -7,6 +8,9 @@ use Soburr\PaymentTracker\Http\Controllers\TrackPaymentController;
 
 Route::inertia('/', 'Welcome')->name('home');
 
+Route::get('/track', function () {
+    return Inertia::render('track');
+});
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
 });
