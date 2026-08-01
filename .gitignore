@@ -27,3 +27,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+test-webhook.ps1
+webhook-payload.json
