@@ -18,14 +18,21 @@ class TrackPaymentController extends Controller
             return response()->json(['message' => 'Tracking token not found'], 404);
         }
 
-        // This is the ENTIRE public contract of this endpoint. Notice
-        // what's absent: paystack_reference never appears here, and
-        // never will, no matter what. Only what a buyer actually
-        // needs to see is exposed.
+        // A payment genuinely stuck at 'payment_received' for too long
+        // is a real signal something needs attention - verification
+        // normally happens within seconds. We expose this as a
+        // SEPARATE flag, not by overwriting status - the real status
+        // is still needed to render the progress rail correctly.
+        $isDelayed = $track->status === 'payment_received'
+            && $track->created_at->lt(now()->subMinutes(15));
+
         return response()->json([
             'tracking_token' => $track->tracking_token,
             'status' => $track->status,
-            'status_label' => $this->humanLabel($track->status),
+            'status_label' => $isDelayed
+                ? "This is taking longer than usual. We're still checking - no action needed yet."
+                : $this->humanLabel($track->status),
+            'is_delayed' => $isDelayed,
             'amount' => $track->amount_kobo / 100,
             'currency' => $track->currency,
             'timeline' => [

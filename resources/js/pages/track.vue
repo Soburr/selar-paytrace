@@ -108,7 +108,7 @@ function formatTime(isoString) {
           </div>
         </div>
 
-        <p class="status-note">{{ result.status_label }}</p>
+        <p class="status-note" :class="{ delayed: result.is_delayed }">{{ result.status_label }}</p>
       </div>
     </div>
   </div>
@@ -121,6 +121,8 @@ function formatTime(isoString) {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  /* --brand: swap this one value for Selar's confirmed hex once you
+     have it from DevTools - nothing else needs to change. */
   --brand: #7C3AED;
   --brand-soft: rgba(124, 58, 237, 0.12);
   background: #FAFAFA;
@@ -290,5 +292,13 @@ h1 {
   font-size: 13px;
   color: #6B7280;
   text-align: center;
+}
+
+.status-note.delayed {
+  color: #B45309;
+  background: #FFFBEB;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 500;
 }
 </style>
