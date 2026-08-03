@@ -12,17 +12,9 @@ class TrackPaymentController extends Controller
         $track = PaymentTrack::where('tracking_token', $trackingToken)->first();
 
         if (! $track) {
-            // Deliberately vague and identical whether the token is
-            // malformed, never existed, or was typed wrong - we never
-            // want an attacker to learn anything from how this fails.
             return response()->json(['message' => 'Tracking token not found'], 404);
         }
 
-        // A payment genuinely stuck at 'payment_received' for too long
-        // is a real signal something needs attention - verification
-        // normally happens within seconds. We expose this as a
-        // SEPARATE flag, not by overwriting status - the real status
-        // is still needed to render the progress rail correctly.
         $isDelayed = $track->status === 'payment_received'
             && $track->created_at->lt(now()->subMinutes(15));
 
@@ -43,10 +35,6 @@ class TrackPaymentController extends Controller
         ]);
     }
 
-    /**
-     * Converts our internal state names into something a buyer would
-     * actually understand, instead of raw snake_case status strings.
-     */
     protected function humanLabel(string $status): string
     {
         return match ($status) {
