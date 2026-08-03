@@ -121,8 +121,7 @@ function formatTime(isoString) {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  /* --brand: swap this one value for Selar's confirmed hex once you
-     have it from DevTools - nothing else needs to change. */
+  /* 
   --brand: #7C3AED;
   --brand-soft: rgba(124, 58, 237, 0.12);
   background: #FAFAFA;
