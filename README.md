@@ -148,20 +148,6 @@ Paystack retries webhook delivery; the same `charge.success` event can arrive mo
 - The public tracking token is never derived from or reversible to the real Paystack reference.
 - All failure modes default to rejecting/doing nothing rather than guessing (fail closed) — a missing config value, a failed HTTP call to Paystack, or an ambiguous payload never results in an assumed success.
 
-## Testing
-
-There is currently no automated test suite (Pest/PHPUnit) — this is the most significant gap versus a production-ready package, and the top item on the roadmap. Every behavior described in this README (signature verification and rejection, idempotent webhook handling, state machine enforcement, rate limiting) has been manually verified end-to-end against real Paystack webhook payloads during development, but manual verification is not a substitute for a real test suite, and shouldn't be treated as one.
-
-## Known limitations
-
-- `charge.failed` events are not yet processed — a failed payment currently doesn't get a tracked row.
-- Independent Paystack verification runs synchronously inside the webhook response; queueing it is a natural next step for high-volume production use.
-- No active notification system for payments flagged as delayed (`is_delayed: true`) — currently surfaced only on lookup.
-
-## Security
-
-If you discover a security issue, please email [your-email] instead of opening a public issue.
-
 ## License
 
 MIT
